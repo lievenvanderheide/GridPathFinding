@@ -12,20 +12,11 @@ public:
 		NONE = -1,
 		TERRAIN = 0,
 
-		CORNER_TO_CORNER_0 = 1,
-		CORNER_TO_CORNER_1 = 2,
-		CORNER_TO_CORNER_2 = 3,
-		CORNER_TO_CORNER_3 = 4,
-		SHORE_0 = 5,
-		SHORE_1 = 6,
-		SHORE_2 = 7,
-		SHORE_3 = 8,
-		SIDE_CORNERS_0 = 9,
-		SIDE_CORNERS_1 = 10,
-		SIDE_CORNERS_2 = 11,
-		SIDE_CORNERS_3 = 12,
-		T_VERTICES = 13,
-		BEAM_1 = 14,
+		CORNER_TO_CORNER = 1,
+		SHORE = 2,
+		SIDE_CORNERS = 3,
+		T_VERTICES = 4,
+		BEAM_1 = 5,
 	};
 
 	SideBar(QWidget *parent = nullptr);

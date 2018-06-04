@@ -9,6 +9,7 @@
 
 class QSlider;
 class QLabel;
+class QScrollArea;
 
 class HierarchyArea;
 
@@ -22,11 +23,13 @@ public:
 private Q_SLOTS:
 	void onLevelChanged(int value);
 	void onCellSelected(Point cell);
+	void onRotate90Deg();
 
 private:
 	QSlider* mLevelSlider;
 	QLabel* mLevelIndexLabel;
 	QLabel* mSelectedCellLabel;
+	QScrollArea* mScrollArea;
 	HierarchyArea* mHierarchyArea;
 };
 
@@ -38,6 +41,8 @@ public:
 	HierarchyArea(const Hierarchy::TestCase* testCase);
 
 	void setSelectedLevel(int selectedLevel);
+
+	const Hierarchy::TestCase* testCase() const { return mTestCase; }
 
 Q_SIGNALS:
 	void cellSelected(Point pt);

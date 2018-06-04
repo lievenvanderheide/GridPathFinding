@@ -37,52 +37,16 @@ void MainWindow::onTestCaseSelected(SideBar::TestCase testCase)
 		}
 		break;
 
-	case SideBar::TestCase::CORNER_TO_CORNER_0:
-		showTestCaseFromFile(":TestCases/CornerToCorner0.png");
+	case SideBar::TestCase::CORNER_TO_CORNER:
+		showTestCaseFromFile(":TestCases/CornerToCorner.png");
 		break;
 
-	case SideBar::TestCase::CORNER_TO_CORNER_1:
-		showTestCaseFromFile(":TestCases/CornerToCorner1.png");
+	case SideBar::TestCase::SHORE:
+		showTestCaseFromFile(":TestCases/Shore.png");
 		break;
 
-	case SideBar::TestCase::CORNER_TO_CORNER_2:
-		showTestCaseFromFile(":TestCases/CornerToCorner2.png");
-		break;
-
-	case SideBar::TestCase::CORNER_TO_CORNER_3:
-		showTestCaseFromFile(":TestCases/CornerToCorner3.png");
-		break;
-
-	case SideBar::TestCase::SHORE_0:
-		showTestCaseFromFile(":TestCases/Shore0.png");
-		break;
-
-	case SideBar::TestCase::SHORE_1:
-		showTestCaseFromFile(":TestCases/Shore1.png");
-		break;
-
-	case SideBar::TestCase::SHORE_2:
-		showTestCaseFromFile(":TestCases/Shore2.png");
-		break;
-
-	case SideBar::TestCase::SHORE_3:
-		showTestCaseFromFile(":TestCases/Shore3.png");
-		break;
-
-	case SideBar::TestCase::SIDE_CORNERS_0:
-		showTestCaseFromFile(":TestCases/SideCorners0.png");
-		break;
-
-	case SideBar::TestCase::SIDE_CORNERS_1:
-		showTestCaseFromFile(":TestCases/SideCorners1.png");
-		break;
-
-	case SideBar::TestCase::SIDE_CORNERS_2:
-		showTestCaseFromFile(":TestCases/SideCorners2.png");
-		break;
-
-	case SideBar::TestCase::SIDE_CORNERS_3:
-		showTestCaseFromFile(":TestCases/SideCorners3.png");
+	case SideBar::TestCase::SIDE_CORNERS:
+		showTestCaseFromFile(":TestCases/SideCorners.png");
 		break;
 
 	case SideBar::TestCase::T_VERTICES:
@@ -102,7 +66,19 @@ void MainWindow::onTestCaseSelected(SideBar::TestCase testCase)
 void MainWindow::showTestCaseFromFile(const char* fileName)
 {
 	RefPtr<Hierarchy::TestCase> testCase = Hierarchy::TestCase::loadFromFile(fileName);
+	if(testCase)
+	{
+		HierarchyView* hierarchyView = new HierarchyView(testCase);
+		setCentralWidget(hierarchyView);
+	}
+	else
+	{
+		QString errorMsg = QString("Failed to load %1.").arg(fileName);
 
-	HierarchyView* hierarchyView = new HierarchyView(testCase);
-	setCentralWidget(hierarchyView);
+		QLabel* errorLabel = new QLabel(errorMsg);
+		errorLabel->setAlignment(Qt::AlignCenter);
+		errorLabel->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+		errorLabel->setStyleSheet("background-color:gray;");
+		setCentralWidget(errorLabel);
+	}
 }

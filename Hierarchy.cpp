@@ -188,6 +188,26 @@ namespace Hierarchy
 		}
 	}
 
+	void HierarchyLevel::rotate90DegCcw()
+	{
+		std::vector<Cell> rotatedCells;
+		rotatedCells.resize(mWidth * mHeight);
+
+		const Cell* src = mCells.data();
+		for(int y = 0; y < mHeight; y++)
+		{
+			Cell* dest = rotatedCells.data() + mHeight - y - 1;
+			for(int x = 0; x < mWidth; x++)
+			{
+				*dest = *(src++);
+				dest += mHeight;
+			}
+		}
+
+		mCells = std::move(rotatedCells);
+		std::swap(mWidth, mHeight);
+	}
+
 	Hierarchy::Hierarchy(int width, int height, const uint8_t* elevation)
 		: mWidth(width),
 		mHeight(height)
@@ -350,5 +370,36 @@ namespace Hierarchy
 			painter.drawImage(rect, image, srcRect);
 		}
 	}
-}
 
+	void Hierarchy::rotate90DegCcw()
+	{	
+		mLevels[0].rotate90DegCcw();
+
+		int levelWidth = mWidth;
+		int levelHeight = mHeight;
+		int level = 1;
+
+		while(((levelWidth | levelHeight) & 1) == 0)
+		{
+			levelWidth /= 2;
+			levelHeight /= 2;
+			mLevels[level].rotate90DegCcw();
+			level++;
+		}
+
+		if(level < mLevels.size())
+		{
+			for(Cell& cell : mLevels[level - 1].mCells)
+				cell = (Cell)((uint8_t)cell & ~(uint8_t)Cell::LEVEL_UP_MASK);
+
+			do
+			{
+				mLevels[level].initWithLowerLevel(mLevels[level - 1]);
+				level++;
+			}
+			while(level < mLevels.size());
+		}
+
+		std::swap(mWidth, mHeight);
+	}
+}

@@ -283,6 +283,8 @@ namespace Hierarchy
 			return mCells[pt.mX + pt.mY * mWidth];
 		}
 
+		void rotate90DegCcw();
+
 	private:
 		int mWidth;
 		int mHeight;
@@ -346,6 +348,8 @@ namespace Hierarchy
 		void drawLevel0AsBase(QPainter& painter, const QRect& rect) const;
 		void drawLevel(QPainter& painter, int levelIndex, const QRect& rect) const;
 		void drawLevelWithPalette(QPainter& painter, int levelIndex, const QRect& rect, const QVector<QRgb>& palette) const;
+
+		void rotate90DegCcw();
 		
 	private:
 		std::vector<HierarchyLevel> mLevels;

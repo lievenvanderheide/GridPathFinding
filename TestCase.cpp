@@ -3,10 +3,16 @@
 
 namespace Hierarchy
 {
-	TestCase::TestCase(const Hierarchy* hierarchy, const CellAndCorner* roots, int numRoots)
+	TestCase::TestCase(Hierarchy* hierarchy, const CellAndCorner* roots, int numRoots)
 		: mHierarchy(hierarchy),
 		mRoots(roots, roots + numRoots)
 	{
+	}
+
+	TestCase::TestCase(const TestCase& src)
+		: mRoots(src.mRoots)
+	{
+		mHierarchy.setNew(new Hierarchy(*src.mHierarchy));
 	}
 
 	TestCase::~TestCase()
@@ -107,6 +113,47 @@ namespace Hierarchy
 		else
 		{
 			return false;
+		}
+	}
+
+	static CornerIndex rotateCorner90DegCcw(CornerIndex cornerIndex)
+	{
+		const CornerIndex table[] =
+		{
+			CornerIndex::MAX_X_MIN_Y,
+			CornerIndex::MAX_X_MAX_Y,
+			CornerIndex::MIN_X_MIN_Y,
+			CornerIndex::MIN_X_MAX_Y,
+		};
+
+		return table[(int)cornerIndex];
+	}
+
+	void TestCase::rotate90DegCcw()
+	{
+		mHierarchy->rotate90DegCcw();
+
+		int rotatedWidth = mHierarchy->width();
+		int rotatedHeight = mHierarchy->height();
+		for(CellAndCorner& root : mRoots)
+		{
+			CellKey level0CellKey = root.mCell;
+			int8_t cornerX = (int8_t)root.mCorner & 1;
+			int8_t cornerY = (int8_t)root.mCorner >> 1;
+			while(level0CellKey.mLevel != 0)
+			{
+				level0CellKey.mCoords <<= 1;
+				level0CellKey.mCoords.mX += cornerX;
+				level0CellKey.mCoords.mY += cornerY;
+				level0CellKey.mLevel--;
+			}
+
+			int16_t tmp = level0CellKey.mCoords.mX;
+			level0CellKey.mCoords.mX = rotatedWidth - level0CellKey.mCoords.mY - 1;
+			level0CellKey.mCoords.mY = tmp;
+
+			root.mCorner = rotateCorner90DegCcw(root.mCorner);
+			root.mCell = mHierarchy->topLevelCellContainingCorner(level0CellKey, root.mCorner);
 		}
 	}
 }

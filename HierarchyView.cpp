@@ -5,10 +5,12 @@ HierarchyView::HierarchyView(const Hierarchy::TestCase* testCase)
 {
 	QVBoxLayout* vLayout = new QVBoxLayout();
 	vLayout->setMargin(0);
+	vLayout->setSpacing(0);
 	setLayout(vLayout);
 
 	QHBoxLayout* topBarLayout = new QHBoxLayout();
 	topBarLayout->setMargin(4);
+	topBarLayout->setSpacing(6);
 	vLayout->addLayout(topBarLayout);
 
 	topBarLayout->addWidget(new QLabel("Level:"));
@@ -35,15 +37,19 @@ HierarchyView::HierarchyView(const Hierarchy::TestCase* testCase)
 
 	topBarLayout->addStretch(1);
 
-	QScrollArea* scrollArea = new QScrollArea();
-	vLayout->addWidget(scrollArea);
+	QPushButton* rotate90DegButton = new QPushButton("Rotate 90");
+	QObject::connect(rotate90DegButton, &QPushButton::clicked,
+		this, &HierarchyView::onRotate90Deg);
+	topBarLayout->addWidget(rotate90DegButton);
+
+	mScrollArea = new QScrollArea();
+	vLayout->addWidget(mScrollArea);
 
 	mHierarchyArea = new HierarchyArea(testCase);
 	QObject::connect(mHierarchyArea, &HierarchyArea::cellSelected,
 		this, &HierarchyView::onCellSelected);
-	scrollArea->setWidget(mHierarchyArea);
-	scrollArea->setAlignment(Qt::AlignCenter);
-	scrollArea->ensureVisible(0, 2048, 0, 0);
+	mScrollArea->setWidget(mHierarchyArea);
+	mScrollArea->setAlignment(Qt::AlignCenter);
 }
 
 void HierarchyView::onLevelChanged(int value)
@@ -59,6 +65,19 @@ void HierarchyView::onCellSelected(Point cell)
 	char txt[32];
 	sprintf(txt, "%d, %d", cell.mX, cell.mY);
 	mSelectedCellLabel->setText(txt);
+}
+
+void HierarchyView::onRotate90Deg()
+{
+	RefPtr<Hierarchy::TestCase> newTestCase;
+	newTestCase.setNew(new Hierarchy::TestCase(*mHierarchyArea->testCase()));
+	newTestCase->rotate90DegCcw();
+
+	mHierarchyArea = new HierarchyArea(newTestCase);
+	QObject::connect(mHierarchyArea, &HierarchyArea::cellSelected,
+		this, &HierarchyView::onCellSelected);
+	mScrollArea->setWidget(mHierarchyArea);
+	mScrollArea->setAlignment(Qt::AlignCenter);
 }
 
 HierarchyArea::HierarchyArea(const Hierarchy::TestCase* testCase)

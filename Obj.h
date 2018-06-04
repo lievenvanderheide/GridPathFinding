@@ -10,6 +10,11 @@ public:
 	{
 	}
 
+	Obj(const Obj& src)
+		: mRefCount(1)
+	{
+	}
+
 	virtual ~Obj()
 	{
 	}
