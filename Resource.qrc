@@ -4,6 +4,14 @@
 		<file>TestCases/CornerToCorner1.png</file>
 		<file>TestCases/CornerToCorner2.png</file>
 		<file>TestCases/CornerToCorner3.png</file>
+		<file>TestCases/Shore0.png</file>
+		<file>TestCases/Shore1.png</file>
+		<file>TestCases/Shore2.png</file>
+		<file>TestCases/Shore3.png</file>
+		<file>TestCases/SideCorners0.png</file>
+		<file>TestCases/SideCorners1.png</file>
+		<file>TestCases/SideCorners2.png</file>
+		<file>TestCases/SideCorners3.png</file>
 		<file>TestCases/TVertices.png</file>
 		<file>TestCases/Beam1.png</file>
 	</qresource>

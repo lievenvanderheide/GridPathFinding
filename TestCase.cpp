@@ -88,7 +88,7 @@ namespace Hierarchy
 
 	bool TestCase::tryAddRoot(Point pt, CornerIndex corner)
 	{
-		CellKey cellKey = mHierarchy->cellContainingPoint(pt);
+		CellKey cellKey = mHierarchy->topLevelCellContainingPoint(pt);
 
 		Point expectedPt = cellKey.mCoords << cellKey.mLevel;
 		if((int8_t)corner & 1)

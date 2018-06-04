@@ -113,6 +113,7 @@
     </QtRcc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ClosedSet.cpp" />
     <ClCompile Include="DebugDraw.cpp" />
     <ClCompile Include="Hierarchy.cpp" />
     <ClCompile Include="HierarchyPathFinder.cpp" />
@@ -126,6 +127,7 @@
     <QtMoc Include="MainWindow.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ClosedSet.h" />
     <ClInclude Include="DebugDraw.h" />
     <QtMoc Include="HierarchyView.h" />
     <ClInclude Include="Hierarchy.h" />

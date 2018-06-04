@@ -53,6 +53,38 @@ void MainWindow::onTestCaseSelected(SideBar::TestCase testCase)
 		showTestCaseFromFile(":TestCases/CornerToCorner3.png");
 		break;
 
+	case SideBar::TestCase::SHORE_0:
+		showTestCaseFromFile(":TestCases/Shore0.png");
+		break;
+
+	case SideBar::TestCase::SHORE_1:
+		showTestCaseFromFile(":TestCases/Shore1.png");
+		break;
+
+	case SideBar::TestCase::SHORE_2:
+		showTestCaseFromFile(":TestCases/Shore2.png");
+		break;
+
+	case SideBar::TestCase::SHORE_3:
+		showTestCaseFromFile(":TestCases/Shore3.png");
+		break;
+
+	case SideBar::TestCase::SIDE_CORNERS_0:
+		showTestCaseFromFile(":TestCases/SideCorners0.png");
+		break;
+
+	case SideBar::TestCase::SIDE_CORNERS_1:
+		showTestCaseFromFile(":TestCases/SideCorners1.png");
+		break;
+
+	case SideBar::TestCase::SIDE_CORNERS_2:
+		showTestCaseFromFile(":TestCases/SideCorners2.png");
+		break;
+
+	case SideBar::TestCase::SIDE_CORNERS_3:
+		showTestCaseFromFile(":TestCases/SideCorners3.png");
+		break;
+
 	case SideBar::TestCase::T_VERTICES:
 		showTestCaseFromFile(":TestCases/TVertices.png");
 		break;

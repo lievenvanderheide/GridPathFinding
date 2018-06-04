@@ -48,78 +48,155 @@ namespace Hierarchy
 		CORNER_3,
 	};
 
-	enum class SideEdgeDir : int8_t
+	enum class OnEdgeDir : int8_t
 	{
 		TOWARDS_NEGATIVE = -1,
 		TOWARDS_POSITIVE = 1,
 	};
 
-	static inline bool isEmptyCell(Cell cell)
+	static constexpr inline bool isEmptyCell(Cell cell)
 	{
 		return ((uint8_t)cell & (uint8_t)Cell::EMPTY) != 0;
 	}
 
-	static inline bool isFullCell(Cell cell)
+	static constexpr inline bool isFullCell(Cell cell)
 	{
 		return ((uint8_t)cell & (uint8_t)Cell::FULL) != 0;
 	}
 
-	static inline bool isLevelUpCell(Cell cell)
+	static constexpr inline bool isLevelUpCell(Cell cell)
 	{
 		return ((uint8_t)cell & (uint8_t)Cell::LEVEL_UP_MASK) != 0;
 	}
 
-	static CornerIndex oppositeCorner(CornerIndex cornerIndex)
+	static constexpr inline CornerIndex oppositeCorner(CornerIndex cornerIndex)
 	{
 		return (CornerIndex)((uint8_t)cornerIndex ^ 3);
 	}
 
-	static EdgeIndex oppositeEdge(EdgeIndex edgeIndex)
+	static constexpr inline CornerIndex oppositeXCorner(CornerIndex cornerIndex)
+	{
+		return (CornerIndex)((uint8_t)cornerIndex ^ 1);
+	}
+
+	static constexpr inline CornerIndex oppositeYCorner(CornerIndex cornerIndex)
+	{
+		return (CornerIndex)((uint8_t)cornerIndex ^ 2);
+	}
+
+	static constexpr inline EdgeIndex oppositeEdge(EdgeIndex edgeIndex)
 	{
 		return (EdgeIndex)((uint8_t)edgeIndex ^ 2);
 	}
 
 	static inline bool cornerOnEdge(CornerIndex cornerIndex, EdgeIndex edgeIndex)
 	{
-		uint8_t edgeAxis = (uint8_t)edgeIndex & 1;
-		uint8_t edgeSign = (uint8_t)edgeIndex >> 1;
-		return ((uint8_t)cornerIndex >> edgeAxis) == edgeSign;
+		switch(edgeIndex)
+		{
+		case EdgeIndex::MIN_X:
+			return cornerIndex == CornerIndex::MIN_X_MIN_Y || cornerIndex == CornerIndex::MIN_X_MAX_Y;
+		case EdgeIndex::MIN_Y:
+			return cornerIndex == CornerIndex::MIN_X_MIN_Y || cornerIndex == CornerIndex::MAX_X_MIN_Y;
+		case EdgeIndex::MAX_X:
+			return cornerIndex == CornerIndex::MAX_X_MIN_Y || cornerIndex == CornerIndex::MAX_X_MAX_Y;
+		case EdgeIndex::MAX_Y:
+			return cornerIndex == CornerIndex::MIN_X_MAX_Y || cornerIndex == CornerIndex::MAX_X_MAX_Y;
+
+		default:
+			DIDA_ASSERT(!"Invalid input");
+			return false;
+		}
 	}
 
-	static inline CornerIndex edgeMin(EdgeIndex edgeIndex)
+	static constexpr inline CornerIndex edgeMin(EdgeIndex edgeIndex)
 	{
 		uint8_t edgeAxis = (uint8_t)edgeIndex & 1;
 		uint8_t edgeSign = (uint8_t)edgeIndex >> 1;
 		return (CornerIndex)(edgeSign << edgeAxis);
 	}
 
-	static inline bool isStraightDirection(Direction direction)
+	static constexpr inline bool isStraightDirection(Direction direction)
 	{
 		return direction <= Direction::MAX_Y;
 	}
 
-	static inline CornerIndex edgeStartCorner(EdgeIndex edge, SideEdgeDir dir)
+	static constexpr inline CornerIndex edgeStartCorner(EdgeIndex edge, OnEdgeDir dir)
 	{
 		int8_t edgeAxis = (int8_t)edge & 1;
 		int8_t edgeSide = (int8_t)edge >> 1;
 
 		int8_t minCorner = edgeSide << edgeAxis;
-		if(dir == SideEdgeDir::TOWARDS_NEGATIVE)
+		if(dir == OnEdgeDir::TOWARDS_NEGATIVE)
 			return (CornerIndex)(minCorner + (2 >> edgeAxis));
 		else
 			return (CornerIndex)minCorner;
 	}
 
-	static inline CornerIndex edgeEndCorner(EdgeIndex edge, SideEdgeDir dir)
+	static constexpr inline CornerIndex edgeEndCorner(EdgeIndex edge, OnEdgeDir dir)
 	{
 		int8_t edgeAxis = (int8_t)edge & 1;
 		int8_t edgeSide = (int8_t)edge >> 1;
 
 		int8_t minCorner = edgeSide << edgeAxis;
-		if(dir == SideEdgeDir::TOWARDS_POSITIVE)
+		if(dir == OnEdgeDir::TOWARDS_POSITIVE)
 			return (CornerIndex)(minCorner + (2 >> edgeAxis));
 		else
 			return (CornerIndex)minCorner;
+	}
+
+	static constexpr EdgeIndex xEdgeFromCorner(CornerIndex corner)
+	{
+		if((int8_t)corner & 1)
+			return EdgeIndex::MAX_X;
+		else
+			return EdgeIndex::MIN_X;
+	}
+
+	static constexpr OnEdgeDir xEdgeDirFromCorner(CornerIndex corner)
+	{
+		if((int8_t)corner & 2)
+			return OnEdgeDir::TOWARDS_NEGATIVE;
+		else
+			return OnEdgeDir::TOWARDS_POSITIVE;
+	}
+
+	static constexpr EdgeIndex yEdgeFromCorner(CornerIndex corner)
+	{
+		if((int8_t)corner & 2)
+			return EdgeIndex::MAX_Y;
+		else
+			return EdgeIndex::MIN_Y;
+	}
+
+	static constexpr OnEdgeDir yEdgeDirFromCorner(CornerIndex corner)
+	{
+		if((int8_t)corner & 1)
+			return OnEdgeDir::TOWARDS_NEGATIVE;
+		else
+			return OnEdgeDir::TOWARDS_POSITIVE;
+	}
+
+	template <OnEdgeDir onEdgeDir>
+	static constexpr inline bool onEdgeLt(int16_t a, int16_t b)
+	{
+		if(onEdgeDir == OnEdgeDir::TOWARDS_POSITIVE)
+			return a < b;
+		else
+			return a > b;
+	}
+
+	template <OnEdgeDir onEdgeDir>
+	static constexpr inline bool onEdgeLtEq(int16_t a, int16_t b)
+	{
+		if(onEdgeDir == OnEdgeDir::TOWARDS_POSITIVE)
+			return a <= b;
+		else
+			return a >= b;
+	}
+
+	static constexpr inline OnEdgeDir oppositeDir(OnEdgeDir dir)
+	{
+		return(OnEdgeDir)(-(int8_t)dir);
 	}
 
 	struct CellKey
@@ -225,19 +302,28 @@ namespace Hierarchy
 		int width() const { return mWidth; }
 		int height() const { return mHeight; }
 
-		CellKey cellContainingPoint(Point pt) const;
-		
-		CellKey cellKeyAdjToCorner(CellKey cornerCellKey, CornerIndex cornerIndex) const;
-
 		Cell cellAt(CellKey cellKey) const
 		{
 			return mLevels[cellKey.mLevel].cellAt(cellKey.mCoords);
 		}
 
+		CellKey topLevelCellContainingPoint(Point pt) const;
+		CellKey topLevelCellContainingCorner(CellKey cellKey, CornerIndex cornerIndex) const;
+		
+		template <EdgeIndex edgeIndex, OnEdgeDir tieResolve>
+		CellKey topLevelCellContainingEdgePoint(CellKey cellKey, Point edgePoint) const;
+		
+		CellKey cellKeyAdjToCorner(CellKey cornerCellKey, CornerIndex cornerIndex) const;
+
+		template <EdgeIndex edge>
+		bool edgeTraversable(CellKey cellKey) const;
+
+		template <EdgeIndex edge, OnEdgeDir onEdgeDir> 
 		class BoundaryCellIterator
 		{
 		public:
-			inline BoundaryCellIterator(const Hierarchy* hierarchy, CellKey cellKey, EdgeIndex edge, bool reverse = false);
+			inline BoundaryCellIterator(const Hierarchy* hierarchy, CellKey cellKey);
+			inline BoundaryCellIterator(const Hierarchy* hierarchy, CellKey cellKey, int16_t beginCoord);
 
 			inline bool moveNext();
 
@@ -246,15 +332,16 @@ namespace Hierarchy
 		private:
 			CellKey mCur;
 			CellKey mStack[16];
-			
 			int8_t mStackHead;
-			int8_t mParallelAxis;
-			int8_t mParallelDir;
-			int8_t mNormalAxis;
-			int8_t mTowardsEdge;
 			
 			const Hierarchy* mHierarchy;
 		};
+
+		template <EdgeIndex edge, OnEdgeDir dir>
+		CellKey prevBoundaryCell(CellKey cellKey) const;
+
+		template <EdgeIndex edge, OnEdgeDir dir>
+		CellKey nextBoundaryCell(CellKey cellKey) const;
 
 		void drawLevel0AsBase(QPainter& painter, const QRect& rect) const;
 		void drawLevel(QPainter& painter, int levelIndex, const QRect& rect) const;

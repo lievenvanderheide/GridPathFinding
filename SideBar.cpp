@@ -12,10 +12,18 @@ SideBar::SideBar(QWidget *parent)
 	const char* testCaseNames[] = 
 	{
 		"Terrain",
+		"Corner to corner 0",
 		"Corner to corner 1",
 		"Corner to corner 2",
 		"Corner to corner 3",
-		"Corner to corner 4",
+		"Shore 0",
+		"Shore 1",
+		"Shore 2",
+		"Shore 3",
+		"Side Corners 0",
+		"Side Corners 1",
+		"Side Corners 2",
+		"Side Corners 3",
 		"T-Vertices",
 		"Beam 1",
 	};

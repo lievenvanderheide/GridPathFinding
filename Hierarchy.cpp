@@ -218,7 +218,7 @@ namespace Hierarchy
 		}
 	}
 
-	CellKey Hierarchy::cellContainingPoint(Point pt) const
+	CellKey Hierarchy::topLevelCellContainingPoint(Point pt) const
 	{
 		CellKey ret;
 		ret.mCoords = pt;
@@ -226,12 +226,40 @@ namespace Hierarchy
 
 		while(isLevelUpCell(cellAt(ret)))
 		{
-			ret.mCoords.mX /= 2;
-			ret.mCoords.mY /= 2;
+			ret.mCoords >>= 1;
 			ret.mLevel++;
 		}
 
 		return ret;
+	}
+
+	CellKey Hierarchy::topLevelCellContainingCorner(CellKey cellKey, CornerIndex cornerIndex) const
+	{
+		int8_t cornerX = (int8_t)cornerIndex & 1;
+		int8_t cornerY = (int8_t)cornerIndex >> 1;
+
+		if(cellAt(cellKey) == Cell::PARTIAL)
+		{
+			while(cellAt(cellKey) == Cell::PARTIAL)
+			{
+				cellKey.mCoords <<= 1;
+				cellKey.mCoords.mX += cornerX;
+				cellKey.mCoords.mY += cornerY;
+				cellKey.mLevel--;
+			}
+
+			return cellKey;
+		}
+		else
+		{
+			while(isLevelUpCell(cellAt(cellKey)))
+			{
+				cellKey.mCoords >>= 1;
+				cellKey.mLevel++;
+			}
+
+			return cellKey;
+		}
 	}
 
 	CellKey Hierarchy::cellKeyAdjToCorner(CellKey cornerCellKey, CornerIndex corner) const

@@ -63,7 +63,8 @@ void HierarchyView::onCellSelected(Point cell)
 
 HierarchyArea::HierarchyArea(const Hierarchy::TestCase* testCase)
 	: mTestCase(testCase),
-	mDebugDraw(testCase->hierarchy())
+	mDebugDraw(testCase->hierarchy()),
+	mPathFinder(mTestCase->hierarchy())
 {
 	setFocusPolicy(Qt::StrongFocus);
 
@@ -83,9 +84,9 @@ HierarchyArea::HierarchyArea(const Hierarchy::TestCase* testCase)
 
 	mSelectedLevel = 0;
 	mSelectedCell = Point::invalidPoint();
-
-	mPathFinder.mHierarchy = hierarchy;
-	mLastIterationRes = mPathFinder.begin(mTestCase->rootsBegin(), mTestCase->numRoots());
+	
+	DIDA_ASSERT(mTestCase->numRoots() == 1);
+	mLastIterationRes = mPathFinder.begin(*mTestCase->rootsBegin());
 }
 
 void HierarchyArea::setSelectedLevel(int selectedLevel)
