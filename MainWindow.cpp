@@ -29,6 +29,7 @@ void MainWindow::onTestCaseSelected(SideBar::TestCase testCase)
 	switch(testCase)
 	{
 	case SideBar::TestCase::NONE:
+	case SideBar::TestCase::TERRAIN:
 		{
 			QFrame* grayArea = new QFrame();
 			grayArea->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);

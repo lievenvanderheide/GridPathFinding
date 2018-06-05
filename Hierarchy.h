@@ -176,6 +176,22 @@ namespace Hierarchy
 			return OnEdgeDir::TOWARDS_POSITIVE;
 	}
 
+	static constexpr EdgeIndex edgeFromCorner(CornerIndex corner, int8_t axis)
+	{
+		if(axis == 0)
+			return xEdgeFromCorner(corner);
+		else
+			return yEdgeFromCorner(corner);
+	}
+
+	static constexpr OnEdgeDir edgeDirFromCorner(CornerIndex corner, int8_t axis)
+	{
+		if(axis == 0)
+			return xEdgeDirFromCorner(corner);
+		else
+			return yEdgeDirFromCorner(corner);
+	}
+
 	template <OnEdgeDir onEdgeDir>
 	static constexpr inline bool onEdgeLt(int16_t a, int16_t b)
 	{
@@ -229,11 +245,6 @@ namespace Hierarchy
 				return mLevel < b.mLevel;
 		}
 
-		Point topLeftCorner() const
-		{
-			return mCoords << mLevel;
-		}
-
 		Point corner(CornerIndex corner) const
 		{
 			int8_t cornerX = (int8_t)corner & 1;
@@ -241,21 +252,6 @@ namespace Hierarchy
 			return Point(
 				(mCoords.mX + cornerX) << mLevel,
 				(mCoords.mY + cornerY) << mLevel);
-		}
-
-		void edgeCorners(EdgeIndex edge, Point& aOut, Point& bOut) const
-		{
-			int8_t axis = (int8_t)edge & 1;
-			int8_t side = (int8_t)edge >> 1;
-
-			aOut = mCoords;
-			aOut[axis] += side;
-
-			bOut = aOut;
-			aOut[axis ^ 1]++;
-
-			aOut <<= mLevel;
-			bOut <<= mLevel;
 		}
 
 		static CellKey invalidCellKey()

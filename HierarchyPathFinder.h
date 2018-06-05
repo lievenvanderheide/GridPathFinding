@@ -34,8 +34,16 @@ namespace Hierarchy
 		CellKey mNextCellKey;
 		int16_t mDiagLen;
 
-		bool mTouchesXSideEdge;
-		bool mTouchesYSideEdge;
+		bool mXBeamTouchesSideEdge;
+		bool mYBeamTouchesSideEdge;
+
+		CellKey mXBeamCellKey;
+		int16_t mXBeamMin;
+		int16_t mXBeamMax;
+
+		CellKey mYBeamCellKey;
+		int16_t mYBeamMin;
+		int16_t mYBeamMax;
 	};
 
 	class PathFinder
@@ -65,6 +73,8 @@ namespace Hierarchy
 			BEAM_FROM_MAX_X_SIDE_MAX_Y,
 			BEAM_FROM_MAX_Y_SIDE_MIN_X,
 			BEAM_FROM_MAX_Y_SIDE_MAX_X,
+
+			DRAW_ONLY,
 		};
 
 		struct Step
@@ -77,6 +87,9 @@ namespace Hierarchy
 
 			Point mPoint;
 			Point mParentPoint;
+
+			int16_t mBeamMin;
+			int16_t mBeamMax;
 			
 			Cost mTraversedCost;
 
@@ -106,10 +119,16 @@ namespace Hierarchy
 		void enqueueDiag(const Step& step, const CornerConnectionInfo<cornerIndex>& connectionInfo);
 
 		template <CornerIndex cornerIndex, int8_t axis>
-		void enqueueShore(const Step& step);
+		void enqueueBeam(const Step& step, CellKey nextCellKey, int16_t beamMin, int16_t beamMax);
 
-		template <EdgeIndex edge, OnEdgeDir dir>
+		template <CornerIndex cornerIndex, int8_t axis>
+		void enqueueBeamCell(const Step& step, CellKey nextCellKey, int16_t beamMin, int16_t beamMax);
+
+		template <CornerIndex cornerIndex, int8_t beamAxis>
 		void enqueueSideEdge(const Step& step);
+
+		template <CornerIndex cornerIndex, int8_t axis>
+		void enqueueShore(const Step& step);
 
 		template <EdgeIndex frontEdge, OnEdgeDir onFrontDir>
 		void enqueueBeamFullEdge(const Step& step);
@@ -127,6 +146,7 @@ namespace Hierarchy
 
 		static EdgeIndex beamSideEdge(EdgeIndex frontEdge, OnEdgeDir onFrontDir);
 		static StepType beamStepType(EdgeIndex toEdge, OnEdgeDir dir);
+		static StepType beamStepType(CornerIndex cornerIndex, int8_t axis);
 	
 		Point mStartPoint;
 		Point mEndPoint;

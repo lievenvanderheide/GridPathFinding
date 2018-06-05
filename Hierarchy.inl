@@ -85,7 +85,10 @@ namespace Hierarchy
 	Hierarchy::BoundaryCellIterator<edge, dir>::BoundaryCellIterator(
 		const Hierarchy* hierarchy, CellKey cellKey, int16_t beginCoord)
 	{
+		mHierarchy = hierarchy;
+
 		int8_t normalAxis = (int8_t)edge & 1;
+		int8_t towardsEdge = (int8_t)edge >> 1;
 		int8_t parallelAxis = normalAxis ^ 1;
 
 		int16_t cellMin = cellKey.mCoords[parallelAxis] << cellKey.mLevel;
@@ -93,33 +96,31 @@ namespace Hierarchy
 		if(dir == OnEdgeDir::TOWARDS_NEGATIVE)
 			std::swap(cellMin, cellMax);
 
-		if(onEdgeLtEq(beginCoord, cellMin) || 
+		if(onEdgeLt<dir>(beginCoord, cellMin) || 
 			mHierarchy->cellAt(cellKey) != Cell::PARTIAL)
-		{
-			mHierarchy = hierarchy;
+		{	
 			mStack[0] = cellKey;
 			mStackHead = 1;
 		}
 		else if(mHierarchy->cellAt(cellKey) == Cell::PARTIAL)
 		{
-			mHierarchy = hierarchy;
 			mStackHead = 0;
 
 			do
 			{
-				mCur.mCoords <<= 1;
-				mCur.mLevel--;
+				cellKey.mCoords <<= 1;
+				cellKey.mLevel--;
 
-				mCur.mCoords[normalAxis] += towardsEdge;
+				cellKey.mCoords[normalAxis] += towardsEdge;
 
-				CellKey next = mCur;
+				CellKey next = cellKey;
 				if(dir == OnEdgeDir::TOWARDS_POSITIVE)
 					next.mCoords[parallelAxis]++;
 				else
-					mCur.mCoords[parallelAxis]++;
+					cellKey.mCoords[parallelAxis]++;
 
 				int16_t mid = (cellMin + cellMax) / 2;
-				if(onEdgeLt(beginCoord, mid))
+				if(onEdgeLt<dir>(beginCoord, mid))
 				{
 					cellMax = mid;
 					mStack[mStackHead++] = next;
@@ -127,12 +128,12 @@ namespace Hierarchy
 				else
 				{
 					cellMin = mid;
-					mCur = next;
+					cellKey = next;
 				}
 			}
 			while(mHierarchy->cellAt(cellKey) == Cell::PARTIAL);
 
-			mStack[mStackHead++] = mCur;
+			mStack[mStackHead++] = cellKey;
 		}
 	}
 

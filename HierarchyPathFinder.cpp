@@ -101,50 +101,23 @@ namespace Hierarchy
 	void PathFinder::stepCornerTempl(const Step& step)
 	{
 		DIDA_ASSERT(step.mStepType <= StepType::CORNER_MAX_X_MAX_Y);
+		DIDA_ASSERT(mHierarchy->cellAt(step.mCellKey) == Cell::FULL);
 
-		if(mHierarchy->cellAt(step.mCellKey) == Cell::FULL)
-		{
-			CornerConnectionInfo<cornerIndex> connectionInfo;
-			connectionInfo.init(*mHierarchy, step.mPoint, step.mCellKey);
+		CornerConnectionInfo<cornerIndex> connectionInfo;
+		connectionInfo.init(*mHierarchy, step.mPoint, step.mCellKey);
 
-			enqueueDiag<cornerIndex>(step, connectionInfo);
+		enqueueDiag<cornerIndex>(step, connectionInfo);
 
-			if(connectionInfo.mTouchesXSideEdge)
-			{
-				enqueueSideEdge<xEdgeFromCorner(cornerIndex), xEdgeDirFromCorner(cornerIndex)>(step);
-			}
+		if(connectionInfo.mXBeamTouchesSideEdge)
+			enqueueSideEdge<cornerIndex, 0>(step);
 
-			if(connectionInfo.mTouchesYSideEdge)
-			{
-				enqueueSideEdge<yEdgeFromCorner(cornerIndex), yEdgeDirFromCorner(cornerIndex)>(step);
-			}
+		if(connectionInfo.mYBeamTouchesSideEdge)
+			enqueueSideEdge<cornerIndex, 1>(step);
 
-			constexpr EdgeIndex beamXEdge = oppositeEdge(xEdgeFromCorner(cornerIndex));
-			constexpr OnEdgeDir beamXEdgeDir = xEdgeDirFromCorner(cornerIndex);
-
-			constexpr EdgeIndex beamYEdge = oppositeEdge(yEdgeFromCorner(cornerIndex));
-			constexpr OnEdgeDir beamYEdgeDir = yEdgeDirFromCorner(cornerIndex);
-
-			if(connectionInfo.mTouchesXSideEdge &&
-				connectionInfo.mTouchesYSideEdge)
-			{
-				enqueueBeamFullEdge<beamXEdge, beamXEdgeDir>(step);
-				enqueueBeamFullEdge<beamYEdge, beamYEdgeDir>(step);
-			}
-			else if(connectionInfo.mTouchesXSideEdge)
-			{
-			}
-			else
-			{
-				DIDA_ASSERT(connectionInfo.mTouchesYSideEdge);
-				DIDA_ASSERT(!"Not implemented yet");
-			}
-		}
-		else
-		{
-			enqueueShore<cornerIndex, 0>(step);
-			enqueueShore<cornerIndex, 1>(step);
-		}
+		enqueueBeam<cornerIndex, 0>(step, connectionInfo.mXBeamCellKey,
+			connectionInfo.mXBeamMin, connectionInfo.mXBeamMax);
+		enqueueBeam<cornerIndex, 1>(step, connectionInfo.mYBeamCellKey,
+			connectionInfo.mYBeamMin, connectionInfo.mYBeamMax);
 	}
 
 	void PathFinder::stepBeam(const Step& step)
@@ -192,16 +165,18 @@ namespace Hierarchy
 	template <EdgeIndex frontEdge, OnEdgeDir onFrontDir>
 	void PathFinder::stepBeamTempl(const Step& step)
 	{
-		constexpr CornerIndex beamCorner = edgeStartCorner(oppositeEdge(frontEdge), onFrontDir);
+		constexpr CornerIndex corner = edgeStartCorner(oppositeEdge(frontEdge), onFrontDir);
+		constexpr int8_t axis = (int8_t)frontEdge & 1;
+		constexpr int8_t cornerOnAxis = ((int8_t)corner >> axis) & 1;
 
-		if(step.mCellKey.corner(beamCorner) == step.mPoint)
+		if(step.mCellKey.corner(corner) == step.mPoint)
 		{
-			enqueueBeamFullEdge<frontEdge, onFrontDir>(step);
+			enqueueSideEdge<corner, axis>(step);
 		}
-		else
-		{
-			DIDA_ASSERT(!"Not implemented yet");
-		}
+		
+		CellKey nextCellKey = step.mCellKey;
+		nextCellKey.mCoords[axis] += 1 - 2 * cornerOnAxis;
+		enqueueBeam<corner, axis>(step, nextCellKey, step.mBeamMin, step.mBeamMax);
 	}
 
 	template <CornerIndex cornerIndex>
@@ -209,15 +184,142 @@ namespace Hierarchy
 	{
 		if(!mClosedSet.pointTraversed(connectionInfo.mNextCellKey, connectionInfo.mDiagEndPt))
 		{
-			Step nextStep;
-			nextStep.mStepType = (StepType)((int8_t)StepType::CORNER_MIN_X_MIN_Y + (int8_t)cornerIndex);
-			nextStep.mCellKey = connectionInfo.mNextCellKey;
-			nextStep.mClosedSetEdges = 0xf;
-			nextStep.mClosedSetCellKey = step.mCellKey;
-			nextStep.mParentPoint = connectionInfo.mDiagStartPt;
-			nextStep.mPoint = connectionInfo.mDiagEndPt;
-			nextStep.mTraversedCost = step.mTraversedCost + Cost(0, connectionInfo.mDiagLen);
-			mOpenSet.push(nextStep);
+			if(mHierarchy->cellAt(connectionInfo.mNextCellKey) == Cell::FULL)
+			{
+				Step nextStep;
+				nextStep.mStepType = (StepType)((int8_t)StepType::CORNER_MIN_X_MIN_Y + (int8_t)cornerIndex);
+				nextStep.mCellKey = connectionInfo.mNextCellKey;
+				nextStep.mClosedSetEdges = 0xf;
+				nextStep.mClosedSetCellKey = step.mCellKey;
+				nextStep.mParentPoint = connectionInfo.mDiagStartPt;
+				nextStep.mPoint = connectionInfo.mDiagEndPt;
+				nextStep.mTraversedCost = step.mTraversedCost + Cost(0, connectionInfo.mDiagLen);
+				mOpenSet.push(nextStep);
+			}
+			else
+			{
+				Step nextStep;
+				nextStep.mStepType = StepType::DRAW_ONLY;
+				nextStep.mCellKey = connectionInfo.mNextCellKey;
+				nextStep.mClosedSetEdges = 0xf;
+				nextStep.mClosedSetCellKey = step.mCellKey;
+				nextStep.mParentPoint = connectionInfo.mDiagStartPt;
+				nextStep.mPoint = connectionInfo.mDiagEndPt;
+				nextStep.mTraversedCost = step.mTraversedCost + Cost(0, connectionInfo.mDiagLen);
+				mOpenSet.push(nextStep);
+			}
+		}
+	}
+
+	template <CornerIndex cornerIndex, int8_t axis>
+	void PathFinder::enqueueBeam(const Step& step, CellKey nextCellKey, int16_t beamMin, int16_t beamMax)
+	{
+		int8_t cornerX = (int8_t)cornerIndex & 1;
+		int8_t cornerY = (int8_t)cornerIndex >> 1;
+		constexpr EdgeIndex beamEdge = edgeFromCorner(cornerIndex, axis);
+
+		Cell nextCell = mHierarchy->cellAt(nextCellKey);
+		if(nextCell == Cell::PARTIAL)
+		{
+			Hierarchy::BoundaryCellIterator<beamEdge, OnEdgeDir::TOWARDS_POSITIVE> it(
+				mHierarchy, nextCellKey, beamMin);
+			while(it.moveNext())
+			{
+				CellKey childCellKey = it.cell();
+				int16_t childMin = childCellKey.mCoords[axis ^ 1] << childCellKey.mLevel;
+				if(childMin >= beamMax)
+				{
+					break;
+				}
+
+				int16_t childMax = childMin + (1 << childCellKey.mLevel);
+
+				enqueueBeamCell<cornerIndex, axis>(step, childCellKey, 
+					std::max(beamMin, childMin), std::min(beamMax, childMax));
+			}
+		}
+		else
+		{
+			while(isLevelUpCell(nextCell))
+			{
+				nextCellKey.mCoords >>= 1;
+				nextCellKey.mLevel++;
+				nextCell = mHierarchy->cellAt(nextCellKey);
+			}
+
+			enqueueBeamCell<cornerIndex, axis>(step, nextCellKey, beamMin, beamMax);
+		}
+	}
+
+	template <CornerIndex cornerIndex, int8_t axis>
+	void PathFinder::enqueueBeamCell(const Step& step, CellKey nextCellKey, int16_t beamMin, int16_t beamMax)
+	{
+		constexpr int8_t perpAxis = axis ^ 1;
+
+		int16_t cellMin = nextCellKey.mCoords[perpAxis] << nextCellKey.mLevel;
+		int16_t cellMax = cellMin + (1 << nextCellKey.mLevel);
+
+		DIDA_ASSERT(cellMax > beamMin);
+		DIDA_ASSERT(cellMin < beamMax);
+
+		beamMin = std::max(beamMin, cellMin);
+		beamMax = std::min(beamMax, cellMax);
+
+		Point point = nextCellKey.corner(cornerIndex);
+		if(point[perpAxis] < beamMin)
+			point[perpAxis] = beamMin;
+		else if(point[perpAxis] > beamMax)
+			point[perpAxis] = beamMax;
+
+		Cell nextCell = mHierarchy->cellAt(nextCellKey);
+
+		if(nextCell == Cell::FULL)
+		{
+			if(!mClosedSet.pointTraversed(nextCellKey, point))
+			{
+				Step nextStep;
+				nextStep.mStepType = beamStepType(cornerIndex, axis);
+				nextStep.mCellKey = nextCellKey;
+				nextStep.mClosedSetEdges = 0;
+				nextStep.mClosedSetCellKey = step.mCellKey;
+				nextStep.mPoint = point;
+				nextStep.mParentPoint = step.mPoint;
+				nextStep.mBeamMin = beamMin;
+				nextStep.mBeamMax = beamMax;
+				nextStep.mTraversedCost = step.mTraversedCost + Cost::distance(step.mPoint, point);
+				mOpenSet.push(nextStep);
+			}
+		}
+		else
+		{
+			DIDA_ASSERT(nextCell == Cell::EMPTY);
+
+			if(beamMin != nextCellKey.corner(cornerIndex)[perpAxis])
+				return;
+
+			constexpr EdgeIndex beamEdge = edgeFromCorner(cornerIndex, axis);
+			constexpr OnEdgeDir beamEdgeDir = edgeDirFromCorner(cornerIndex, axis);
+
+			CellKey prevBoundaryCellKey = mHierarchy->prevBoundaryCell<beamEdge, beamEdgeDir>(nextCellKey);
+			if(isEmptyCell(mHierarchy->cellAt(prevBoundaryCellKey)))
+				return;
+
+			DIDA_ASSERT(!"Not implemented yet");
+
+			/*if(!mClosedSet.pointTraversed(nextCellKey, point))
+			{
+				Step nextStep;
+				nextStep.mStepType = beamStepType(cornerIndex, axis);
+				nextStep.mCellKey = nextCellKey;
+				nextStep.mClosedSetEdges = 0;
+				nextStep.mClosedSetCellKey = step.mCellKey;
+				nextStep.mPoint = point;
+				nextStep.mParentPoint = step.mPoint;
+				nextStep.mBeamMin = beamMin;
+				nextStep.mBeamMax = beamMax;
+				nextStep.mTraversedCost = step.mTraversedCost + Cost::distance(step.mPoint, point);
+				mOpenSet.push(nextStep);
+			}*/
 		}
 	}
 
@@ -265,15 +367,15 @@ namespace Hierarchy
 		}
 	}
 
-	template <EdgeIndex sideEdge, OnEdgeDir sideDir>
+	template <CornerIndex cornerIndex, int8_t beamAxis>
 	void PathFinder::enqueueSideEdge(const Step& step)
 	{
-		int8_t sideEdgeAxis = (int8_t)sideEdge & 1;
-		int8_t sideEdgeSide = (int8_t)sideEdge >> 1;
-		int8_t traverseAxis = sideEdgeAxis ^ 1;
+		constexpr int8_t sideEdgeAxis = beamAxis ^ 1;
+		constexpr int8_t sideEdgeSide = ((int8_t)cornerIndex >> sideEdgeAxis) & 1;
+		constexpr OnEdgeDir beamDir = (((int8_t)cornerIndex >> beamAxis) & 1) ? OnEdgeDir::TOWARDS_NEGATIVE : OnEdgeDir::TOWARDS_POSITIVE;
 
-		CornerIndex nextStepCorner = edgeStartCorner(oppositeEdge(sideEdge), sideDir);
-		StepType nextStepType = (StepType)((int8_t)StepType::CORNER_MIN_X_MIN_Y + (int8_t)nextStepCorner);
+		constexpr CornerIndex oppositeCorner = (CornerIndex)((int8_t)cornerIndex ^ (1 << sideEdgeAxis));
+		constexpr StepType nextStepType = (StepType)((int8_t)StepType::CORNER_MIN_X_MIN_Y + (int8_t)oppositeCorner);
 
 		CellKey neighborCellKey = step.mCellKey;
 		neighborCellKey.mCoords[sideEdgeAxis] += 2 * sideEdgeSide - 1;
@@ -284,7 +386,8 @@ namespace Hierarchy
 		int16_t len = 0;
 		if(neighborCell == Cell::PARTIAL)
 		{
-			Hierarchy::BoundaryCellIterator<oppositeEdge(sideEdge), sideDir> it(mHierarchy, neighborCellKey);
+			Hierarchy::BoundaryCellIterator<edgeFromCorner(oppositeCorner, sideEdgeAxis),
+				edgeDirFromCorner(oppositeCorner, sideEdgeAxis)> it(mHierarchy, neighborCellKey);
 			while(it.moveNext())
 			{
 				CellKey diagCellKey = it.cell();
@@ -294,10 +397,10 @@ namespace Hierarchy
 					if(prevEmpty)
 					{
 						Point point = step.mPoint;
-						if(sideDir == OnEdgeDir::TOWARDS_POSITIVE)
-							point[traverseAxis] += len;
+						if(beamDir == OnEdgeDir::TOWARDS_POSITIVE)
+							point[beamAxis] += len;
 						else
-							point[traverseAxis] -= len;
+							point[beamAxis] -= len;
 
 						if(!mClosedSet.pointTraversed(diagCellKey, point))
 						{
@@ -332,19 +435,19 @@ namespace Hierarchy
 		if(prevEmpty)
 		{
 			CellKey diagCellKey = neighborCellKey;
-			if(sideDir == OnEdgeDir::TOWARDS_POSITIVE)
-				diagCellKey.mCoords[traverseAxis]++;
+			if(beamDir == OnEdgeDir::TOWARDS_POSITIVE)
+				diagCellKey.mCoords[beamAxis]++;
 			else
-				diagCellKey.mCoords[traverseAxis]--;
-			diagCellKey = mHierarchy->topLevelCellContainingCorner(diagCellKey, nextStepCorner);
+				diagCellKey.mCoords[beamAxis]--;
+			diagCellKey = mHierarchy->topLevelCellContainingCorner(diagCellKey, oppositeCorner);
 
 			if(mHierarchy->cellAt(diagCellKey) == Cell::FULL)
 			{
 				Point point = step.mPoint;
-				if(sideDir == OnEdgeDir::TOWARDS_POSITIVE)
-					point[traverseAxis] += len;
+				if(beamDir == OnEdgeDir::TOWARDS_POSITIVE)
+					point[beamAxis] += len;
 				else
-					point[traverseAxis] -= len;
+					point[beamAxis] -= len;
 
 				if(!mClosedSet.pointTraversed(diagCellKey, point))
 				{
@@ -546,6 +649,40 @@ namespace Hierarchy
 		if(dir == OnEdgeDir::TOWARDS_NEGATIVE)
 			beamIdx++;
 		return (StepType)((int)StepType::BEAM_FROM_MIN_X_SIDE_MIN_Y + beamIdx);
+	}
+
+	PathFinder::StepType PathFinder::beamStepType(CornerIndex cornerIndex, int8_t axis)
+	{
+		switch(cornerIndex)
+		{
+		case CornerIndex::MIN_X_MIN_Y:
+			if(axis == 0)
+				return StepType::BEAM_FROM_MIN_X_SIDE_MIN_Y;
+			else
+				return StepType::BEAM_FROM_MIN_Y_SIDE_MIN_X;
+
+		case CornerIndex::MAX_X_MIN_Y:
+			if(axis == 0)
+				return StepType::BEAM_FROM_MAX_X_SIDE_MIN_Y;
+			else
+				return StepType::BEAM_FROM_MIN_Y_SIDE_MAX_X;
+
+		case CornerIndex::MIN_X_MAX_Y:
+			if(axis == 0)
+				return StepType::BEAM_FROM_MIN_X_SIDE_MAX_Y;
+			else
+				return StepType::BEAM_FROM_MAX_Y_SIDE_MIN_X;
+
+		case CornerIndex::MAX_X_MAX_Y:
+			if(axis == 0)
+				return StepType::BEAM_FROM_MAX_X_SIDE_MAX_Y;
+			else
+				return StepType::BEAM_FROM_MAX_Y_SIDE_MAX_X;
+
+		default:
+			DIDA_ASSERT(!"Invalid input");
+			return StepType::BEAM_FROM_MIN_X_SIDE_MIN_Y;
+		}
 	}
 
 #if 0
@@ -1004,8 +1141,8 @@ namespace Hierarchy
 					yEdgeFromCorner(cornerIndex), yEdgeDirFromCorner(cornerIndex)>(
 					mNextCellKey, mDiagEndPt);
 
-				mTouchesXSideEdge = true;
-				mTouchesYSideEdge = false;
+				mXBeamTouchesSideEdge = false;
+				mYBeamTouchesSideEdge = true;
 			}
 			else
 			{
@@ -1024,9 +1161,9 @@ namespace Hierarchy
 				mNextCellKey = hierarchy.topLevelCellContainingEdgePoint<
 					xEdgeFromCorner(cornerIndex), xEdgeDirFromCorner(cornerIndex)>(
 					mNextCellKey, mDiagEndPt);
-				
-				mTouchesXSideEdge = false;
-				mTouchesYSideEdge = true;
+
+				mXBeamTouchesSideEdge = true;
+				mYBeamTouchesSideEdge = false;
 			}
 		}
 		else
@@ -1040,8 +1177,38 @@ namespace Hierarchy
 
 			mDiagLen = 1 << cellKey.mLevel;
 
-			mTouchesXSideEdge = true;
-			mTouchesYSideEdge = true;
+			mXBeamTouchesSideEdge = true;
+			mYBeamTouchesSideEdge = true;
 		}
+
+		mXBeamCellKey = cellKey;
+		mXBeamCellKey.mCoords.mX += 1 - 2 * cornerX;
+		if(cornerY == 0)
+		{
+			mXBeamMin = mDiagStartPt.mY;
+			mXBeamMax = mDiagEndPt.mY;
+		}
+		else
+		{
+			mXBeamMin = mDiagEndPt.mY;
+			mXBeamMax = mDiagStartPt.mY;
+		}
+
+		DIDA_ASSERT(mXBeamMin < mXBeamMax);
+
+		mYBeamCellKey = cellKey;
+		mYBeamCellKey.mCoords.mY += 1 - 2 * cornerY;
+		if(cornerX == 0)
+		{
+			mYBeamMin = mDiagStartPt.mX;
+			mYBeamMax = mDiagEndPt.mX;
+		}
+		else
+		{
+			mYBeamMin = mDiagEndPt.mX;
+			mYBeamMax = mDiagStartPt.mX;
+		}
+
+		DIDA_ASSERT(mYBeamMin < mYBeamMax);
 	}
 }
