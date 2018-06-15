@@ -315,6 +315,16 @@ namespace Hierarchy
 		return ret;
 	}
 
+	CellKey Hierarchy::diagNextCellKey(CellKey cellKey, CornerIndex cornerIndex) const
+	{
+		int8_t cornerX = (int8_t)cornerIndex & 1;
+		int8_t cornerY = (int8_t)cornerIndex >> 1;
+
+		cellKey.mCoords.mX += 1 - 2 * cornerX;
+		cellKey.mCoords.mY += 1 - 2 * cornerY;
+		return topLevelCellContainingCorner(cellKey, cornerIndex);
+	}
+
 	void Hierarchy::drawLevel0AsBase(QPainter& painter, const QRect& rect) const
 	{
 		QVector<QRgb> palette(256, 0);

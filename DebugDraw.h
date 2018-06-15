@@ -13,7 +13,6 @@ namespace Hierarchy
 		DebugDraw(const Hierarchy* hierarchy);
 
 		void drawLine(Point from, Point to);
-		void drawBeam(CellKey cellKey, Direction direction);
 
 		void drawToPainter(QPainter& painter, float scale) const;
 

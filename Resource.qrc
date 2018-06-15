@@ -1,6 +1,7 @@
 <RCC>
 	<qresource prefix="/">
 		<file>TestCases/CornerToCorner.png</file>
+    <file>TestCases/CornerToOffGridDiag.png</file>
 		<file>TestCases/Shore.png</file>
 		<file>TestCases/SideCorners.png</file>
 		<file>TestCases/TVertices.png</file>

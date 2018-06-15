@@ -42,6 +42,10 @@ void MainWindow::onTestCaseSelected(SideBar::TestCase testCase)
 		showTestCaseFromFile(":TestCases/CornerToCorner.png");
 		break;
 
+	case SideBar::TestCase::CORNER_TO_OFF_GRID_DIAG:
+		showTestCaseFromFile(":TestCases/CornerToOffGridDiag.png");
+		break;
+
 	case SideBar::TestCase::SHORE:
 		showTestCaseFromFile(":TestCases/Shore.png");
 		break;

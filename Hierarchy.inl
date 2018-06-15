@@ -1,5 +1,12 @@
 namespace Hierarchy
 {
+	Cell HierarchyLevel::cellAt(Point pt) const
+	{
+		DIDA_ASSERT(pt.mX >= 0 && pt.mX < mWidth &&
+			pt.mY >= 0 && pt.mY < mHeight);
+		return mCells[pt.mX + pt.mY * mWidth];
+	}
+
 	template <EdgeIndex edgeIndex, OnEdgeDir tieResolve>
 	CellKey Hierarchy::topLevelCellContainingEdgePoint(CellKey cellKey, Point edgePoint) const
 	{	
@@ -19,8 +26,7 @@ namespace Hierarchy
 				cellKey.mCoords[edgeAxis] += edgeSide;
 
 				int16_t mid = (min + max) / 2;
-				if((tieResolve == OnEdgeDir::TOWARDS_POSITIVE && cellKey.mCoords[perpAxis] < edgePoint[perpAxis]) ||
-					(tieResolve == OnEdgeDir::TOWARDS_NEGATIVE && cellKey.mCoords[perpAxis] <= edgePoint[perpAxis]))
+				if(edgePoint[perpAxis] < mid)
 				{
 					max = mid;
 				}
@@ -85,6 +91,8 @@ namespace Hierarchy
 	Hierarchy::BoundaryCellIterator<edge, dir>::BoundaryCellIterator(
 		const Hierarchy* hierarchy, CellKey cellKey, int16_t beginCoord)
 	{
+		static_assert(dir == OnEdgeDir::TOWARDS_POSITIVE);
+
 		mHierarchy = hierarchy;
 
 		int8_t normalAxis = (int8_t)edge & 1;
@@ -93,17 +101,17 @@ namespace Hierarchy
 
 		int16_t cellMin = cellKey.mCoords[parallelAxis] << cellKey.mLevel;
 		int16_t cellMax = cellMin + (1 << cellKey.mLevel);
-		if(dir == OnEdgeDir::TOWARDS_NEGATIVE)
-			std::swap(cellMin, cellMax);
 
-		if(onEdgeLt<dir>(beginCoord, cellMin) || 
+		if(beginCoord < cellMin || 
 			mHierarchy->cellAt(cellKey) != Cell::PARTIAL)
 		{	
 			mStack[0] = cellKey;
 			mStackHead = 1;
 		}
-		else if(mHierarchy->cellAt(cellKey) == Cell::PARTIAL)
+		else
 		{
+			DIDA_ASSERT(mHierarchy->cellAt(cellKey) == Cell::PARTIAL);
+
 			mStackHead = 0;
 
 			do
@@ -114,13 +122,10 @@ namespace Hierarchy
 				cellKey.mCoords[normalAxis] += towardsEdge;
 
 				CellKey next = cellKey;
-				if(dir == OnEdgeDir::TOWARDS_POSITIVE)
-					next.mCoords[parallelAxis]++;
-				else
-					cellKey.mCoords[parallelAxis]++;
+				next.mCoords[parallelAxis]++;
 
 				int16_t mid = (cellMin + cellMax) / 2;
-				if(onEdgeLt<dir>(beginCoord, mid))
+				if(beginCoord < mid)
 				{
 					cellMax = mid;
 					mStack[mStackHead++] = next;

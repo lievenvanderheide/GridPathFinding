@@ -133,7 +133,7 @@ void HierarchyArea::paintEvent(QPaintEvent* evnt)
 	{
 		painter.setPen(QPen(QColor(255, 0, 0)));
 
-		int cellSize = 1 << mSelectedLevel;
+		int cellSize = (1 << mSelectedLevel) * mScale;
 		painter.drawRect(QRect(
 			mSelectedCell.mX * cellSize, 
 			mSelectedCell.mY * cellSize,
@@ -145,7 +145,7 @@ void HierarchyArea::mousePressEvent(QMouseEvent* evnt)
 {
 	QPoint pos = evnt->pos();
 
-	int cellSize = 1 << mSelectedLevel;
+	int cellSize = (1 << mSelectedLevel) * mScale;
 
 	update(QRect(
 		mSelectedCell.mX * cellSize, 

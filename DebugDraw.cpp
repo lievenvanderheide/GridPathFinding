@@ -16,22 +16,17 @@ namespace Hierarchy
 		mLines.push_back(line);
 	}
 
-	void DebugDraw::drawBeam(CellKey cellKey, Direction direction)
-	{
-		Beam beam;
-		beam.mMin = cellKey.corner(CornerIndex::MIN_X_MIN_Y);
-		beam.mMax = cellKey.corner(CornerIndex::MAX_X_MAX_Y);
-		mBeams.push_back(beam);
-	}
-
 	void DebugDraw::drawToPainter(QPainter& painter, float scale) const
 	{
 		painter.setPen(QPen(QColor(255, 0, 0)));
 
 		for(const Line& line : mLines)
 		{
-			QLineF qtLine(line.mFrom.mX * scale, line.mFrom.mY * scale,
-				line.mTo.mX * scale, line.mTo.mY * scale);
+			QLineF qtLine(
+				(line.mFrom.mX + .5f) * scale,
+				(line.mFrom.mY + .5f) * scale,
+				(line.mTo.mX + .5f) * scale,
+				(line.mTo.mY + .5f) * scale);
 			painter.drawLine(qtLine);
 		}
 

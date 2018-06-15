@@ -29,7 +29,7 @@ namespace Hierarchy
 
 		int imageWidth = image.width();
 		int imageHeight = image.height();
-
+		
 		RefPtr<TestCase> ret;
 		ret.setNew(new TestCase());
 
@@ -49,8 +49,7 @@ namespace Hierarchy
 					i++;
 				}
 			}
-
-			QImage grayScaleImage = image.convertToFormat(QImage::Format_Grayscale8);
+			
 			ret->mHierarchy.setNew(new Hierarchy(imageWidth, imageHeight, elevation.data()));
 		}
 		

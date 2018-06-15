@@ -35,19 +35,6 @@ namespace Hierarchy
 		MAX_Y = 3,
 	};
 
-	enum class Direction : uint8_t
-	{
-		MIN_X,
-		MIN_Y,
-		MAX_X,
-		MAX_Y,
-
-		CORNER_0,
-		CORNER_1, 
-		CORNER_2,
-		CORNER_3,
-	};
-
 	enum class OnEdgeDir : int8_t
 	{
 		TOWARDS_NEGATIVE = -1,
@@ -113,11 +100,6 @@ namespace Hierarchy
 		uint8_t edgeAxis = (uint8_t)edgeIndex & 1;
 		uint8_t edgeSign = (uint8_t)edgeIndex >> 1;
 		return (CornerIndex)(edgeSign << edgeAxis);
-	}
-
-	static constexpr inline bool isStraightDirection(Direction direction)
-	{
-		return direction <= Direction::MAX_Y;
 	}
 
 	static constexpr inline CornerIndex edgeStartCorner(EdgeIndex edge, OnEdgeDir dir)
@@ -254,6 +236,15 @@ namespace Hierarchy
 				(mCoords.mY + cornerY) << mLevel);
 		}
 
+		Point cornerGood(CornerIndex corner) const
+		{
+			int8_t cornerX = (int8_t)corner & 1;
+			int8_t cornerY = (int8_t)corner >> 1;
+			return Point(
+				((mCoords.mX + cornerX) << mLevel) - cornerX,
+				((mCoords.mY + cornerY) << mLevel) - cornerY);
+		}
+
 		static CellKey invalidCellKey()
 		{
 			CellKey ret;
@@ -272,12 +263,7 @@ namespace Hierarchy
 		void initLevel0(int width, int height, const uint8_t* elevation, const uint8_t* overrides);
 		void initWithLowerLevel(HierarchyLevel& deeperLevel);
 
-		Cell cellAt(Point pt) const
-		{
-			DIDA_ASSERT(pt.mX >= 0 && pt.mX < mWidth &&
-				pt.mY >= 0 && pt.mY < mHeight);
-			return mCells[pt.mX + pt.mY * mWidth];
-		}
+		inline Cell cellAt(Point pt) const;
 
 		void rotate90DegCcw();
 
@@ -312,6 +298,8 @@ namespace Hierarchy
 		CellKey topLevelCellContainingEdgePoint(CellKey cellKey, Point edgePoint) const;
 		
 		CellKey cellKeyAdjToCorner(CellKey cornerCellKey, CornerIndex cornerIndex) const;
+
+		CellKey diagNextCellKey(CellKey cellKey, CornerIndex cornerIndex) const;
 
 		template <EdgeIndex edge>
 		bool edgeTraversable(CellKey cellKey) const;

@@ -13,10 +13,11 @@ public:
 		TERRAIN = 0,
 
 		CORNER_TO_CORNER = 1,
-		SHORE = 2,
-		SIDE_CORNERS = 3,
-		T_VERTICES = 4,
-		BEAM_1 = 5,
+		CORNER_TO_OFF_GRID_DIAG = 2,
+		SHORE = 3,
+		SIDE_CORNERS = 4,
+		T_VERTICES = 5,
+		BEAM_1 = 6,
 	};
 
 	SideBar(QWidget *parent = nullptr);

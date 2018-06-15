@@ -34,6 +34,9 @@ namespace Hierarchy
 		CellKey mNextCellKey;
 		int16_t mDiagLen;
 
+		CellKey mNextOnGridCellKey;
+		Point mOnGridPoint;
+
 		bool mXBeamTouchesSideEdge;
 		bool mYBeamTouchesSideEdge;
 
@@ -58,28 +61,19 @@ namespace Hierarchy
 			UNREACHABLE,
 		};
 
-		enum class StepType : int8_t
+		enum class StepType : uint8_t
 		{
-			CORNER_MIN_X_MIN_Y,
-			CORNER_MAX_X_MIN_Y,
-			CORNER_MIN_X_MAX_Y,
-			CORNER_MAX_X_MAX_Y,
-
-			BEAM_FROM_MIN_X_SIDE_MIN_Y,
-			BEAM_FROM_MIN_X_SIDE_MAX_Y,
-			BEAM_FROM_MIN_Y_SIDE_MIN_X,
-			BEAM_FROM_MIN_Y_SIDE_MAX_X,
-			BEAM_FROM_MAX_X_SIDE_MIN_Y,
-			BEAM_FROM_MAX_X_SIDE_MAX_Y,
-			BEAM_FROM_MAX_Y_SIDE_MIN_X,
-			BEAM_FROM_MAX_Y_SIDE_MAX_X,
-
-			DRAW_ONLY,
+			DIAG,
+			DIAG_OFF_GRID,
+			BEAM_X,
+			BEAM_Y,
 		};
 
 		struct Step
 		{
-			StepType mStepType;
+			StepType mStepType : 3;
+			CornerIndex mCornerIndex : 2;
+
 			CellKey mCellKey;
 
 			uint8_t mClosedSetEdges;
@@ -105,48 +99,38 @@ namespace Hierarchy
 		IterationRes iteration(DebugDraw* debugDraw);
 
 	private:
-		void stepCorner(const Step& step);
+		void stepDiag(const Step& step);
 
 		template <CornerIndex cornerIndex>
-		void stepCornerTempl(const Step& step);
+		void stepDiagTempl(const Step& step);
+
+		void stepDiagOffGrid(const Step& step);
+
+		template <CornerIndex cornerIndex>
+		void stepDiagOffGridTempl(const Step& step);
 
 		void stepBeam(const Step& step);
 
-		template <EdgeIndex frontEdge, OnEdgeDir onFrontDir>
+		template <CornerIndex cornerIndex, int8_t axis>
 		void stepBeamTempl(const Step& step);
 
 		template <CornerIndex cornerIndex>
-		void enqueueDiag(const Step& step, const CornerConnectionInfo<cornerIndex>& connectionInfo);
+		void enqueueDiag(CellKey cellKey, Point parentPoint, Cost costToParent,
+			CellKey toCellKey, Point toPoint, uint8_t closedSetEdges);
 
 		template <CornerIndex cornerIndex, int8_t axis>
-		void enqueueBeam(const Step& step, CellKey nextCellKey, int16_t beamMin, int16_t beamMax);
+		void enqueueBeam(const Step& step, Point parentPoint, int16_t beamMin, int16_t beamMax);
 
 		template <CornerIndex cornerIndex, int8_t axis>
-		void enqueueBeamCell(const Step& step, CellKey nextCellKey, int16_t beamMin, int16_t beamMax);
+		void enqueueBeamCell(const Step& step, Point parentPoint, CellKey nextCellKey, int16_t beamMin, int16_t beamMax);
 
 		template <CornerIndex cornerIndex, int8_t beamAxis>
-		void enqueueSideEdge(const Step& step);
+		void enqueueSideEdge(CellKey cellKey, Point parentPoint, Cost costToParent);
 
 		template <CornerIndex cornerIndex, int8_t axis>
 		void enqueueShore(const Step& step);
 
-		template <EdgeIndex frontEdge, OnEdgeDir onFrontDir>
-		void enqueueBeamFullEdge(const Step& step);
-
-		template <EdgeIndex frontEdge, OnEdgeDir onFrontDir>
-		void enqueueOnGridBeam(const Step& step, CellKey cellKey, uint8_t closedSetEdges);
-
-#if 0
-		template <EdgeIndex frontEdge, OnEdgeDir onFrontDir>
-		void enqueueBeam(const Step& step, Point diagStartPt, Point diagEndPt);
-
-		template <EdgeIndex frontEdge, OnEdgeDir onFrontDir>
-		void enqueueBeamToNeighbor(const Step& step, Point diagStartPt, Point diagEndPt, CellKey neighborCellKey);
-#endif
-
-		static EdgeIndex beamSideEdge(EdgeIndex frontEdge, OnEdgeDir onFrontDir);
-		static StepType beamStepType(EdgeIndex toEdge, OnEdgeDir dir);
-		static StepType beamStepType(CornerIndex cornerIndex, int8_t axis);
+		void validateStep(const Step& step) const;
 	
 		Point mStartPoint;
 		Point mEndPoint;

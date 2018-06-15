@@ -13,6 +13,7 @@ SideBar::SideBar(QWidget *parent)
 	{
 		"Terrain",
 		"Corner to corner",
+		"Corner to off grid diag",
 		"Shore",
 		"Side Corners",
 		"T-Vertices",
