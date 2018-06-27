@@ -20,6 +20,17 @@
 
 static const float SQRT_2 = 1.41421356237309504880f;
 
+enum class Axis2 : uint8_t
+{
+	X = 0,
+	Y = 1,
+};
+
+constexpr Axis2 otherAxis(Axis2 axis)
+{
+	return (Axis2)((uint8_t)axis ^ 1);
+}
+
 struct Point
 {
 	int16_t mX;
@@ -40,6 +51,16 @@ struct Point
 	int16_t& operator [] (int i)
 	{
 		return (&mX)[i];
+	}
+
+	int16_t operator [] (Axis2 axis) const
+	{
+		return (&mX)[(int)axis];
+	}
+
+	int16_t& operator [] (Axis2 axis)
+	{
+		return (&mX)[(int)axis];
 	}
 
 	bool operator == (Point b) const

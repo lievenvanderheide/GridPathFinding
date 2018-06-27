@@ -111,24 +111,21 @@ namespace Hierarchy
 
 		void stepBeam(const Step& step);
 
-		template <CornerIndex cornerIndex, int8_t axis>
+		template <CornerIndex cornerIndex, Axis2 axis>
 		void stepBeamTempl(const Step& step);
 
 		template <CornerIndex cornerIndex>
 		void enqueueDiag(CellKey cellKey, Point parentPoint, Cost costToParent,
 			CellKey toCellKey, Point toPoint, uint8_t closedSetEdges);
 
-		template <CornerIndex cornerIndex, int8_t axis>
+		template <CornerIndex cornerIndex, Axis2 axis>
 		void enqueueBeam(const Step& step, Point parentPoint, int16_t beamMin, int16_t beamMax);
 
-		template <CornerIndex cornerIndex, int8_t axis>
+		template <CornerIndex cornerIndex, Axis2 axis>
 		void enqueueBeamCell(const Step& step, Point parentPoint, CellKey nextCellKey, int16_t beamMin, int16_t beamMax);
 
-		template <CornerIndex cornerIndex, int8_t beamAxis>
+		template <CornerIndex cornerIndex, Axis2 beamAxis>
 		void enqueueSideEdge(CellKey cellKey, Point parentPoint, Cost costToParent);
-
-		template <CornerIndex cornerIndex, int8_t axis>
-		void enqueueShore(const Step& step);
 
 		void validateStep(const Step& step) const;
 	

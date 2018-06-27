@@ -53,31 +53,8 @@ namespace Hierarchy
 		}
 	}
 
-	template <EdgeIndex edge>
-	bool Hierarchy::edgeTraversable(CellKey cellKey) const
-	{
-		Cell cell = cellAt(cellKey);
-		if(cell == Cell::PARTIAL)
-		{
-			BoundaryCellIterator<edge, OnEdgeDir::TOWARDS_POSITIVE> it(this, cellKey);
-			while(it.moveNext())
-			{
-				if(cellAt(it.cell()) == Cell::EMPTY)
-				{
-					return false;
-				}
-			}
-
-			return true;
-		}
-		else
-		{
-			return isFullCell(cell);
-		}
-	}
-
-	template <EdgeIndex edge, OnEdgeDir dir>
-	Hierarchy::BoundaryCellIterator<edge, dir>::BoundaryCellIterator(
+	template <CornerIndex startCornerIndex, Axis2 axis>
+	Hierarchy::BoundaryCellIterator<startCornerIndex, axis>::BoundaryCellIterator(
 		const Hierarchy* hierarchy, CellKey cellKey)
 	{
 		DIDA_ASSERT(!isLevelUpCell(hierarchy->cellAt(cellKey)));
@@ -87,19 +64,17 @@ namespace Hierarchy
 		mStackHead = 1;
 	}
 
-	template <EdgeIndex edge, OnEdgeDir dir>
-	Hierarchy::BoundaryCellIterator<edge, dir>::BoundaryCellIterator(
+	template <CornerIndex startCornerIndex, Axis2 axis>
+	Hierarchy::BoundaryCellIterator<startCornerIndex, axis>::BoundaryCellIterator(
 		const Hierarchy* hierarchy, CellKey cellKey, int16_t beginCoord)
 	{
-		static_assert(dir == OnEdgeDir::TOWARDS_POSITIVE);
-
 		mHierarchy = hierarchy;
 
-		int8_t normalAxis = (int8_t)edge & 1;
-		int8_t towardsEdge = (int8_t)edge >> 1;
-		int8_t parallelAxis = normalAxis ^ 1;
+		constexpr Axis2 normalAxis = otherAxis(axis);
+		constexpr int8_t towardsEdge = cornerOnAxis(startCornerIndex, normalAxis);
+		constexpr bool towardsPositive = cornerOnAxis(startCornerIndex, axis) == 0;
 
-		int16_t cellMin = cellKey.mCoords[parallelAxis] << cellKey.mLevel;
+		int16_t cellMin = cellKey.mCoords[axis] << cellKey.mLevel;
 		int16_t cellMax = cellMin + (1 << cellKey.mLevel);
 
 		if(beginCoord < cellMin || 
@@ -122,18 +97,27 @@ namespace Hierarchy
 				cellKey.mCoords[normalAxis] += towardsEdge;
 
 				CellKey next = cellKey;
-				next.mCoords[parallelAxis]++;
+				if(towardsPositive)
+					next.mCoords[axis]++;
+				else
+					cellKey.mCoords[axis]++;
 
 				int16_t mid = (cellMin + cellMax) / 2;
 				if(beginCoord < mid)
 				{
 					cellMax = mid;
-					mStack[mStackHead++] = next;
+					if(towardsPositive)
+						mStack[mStackHead++] = next;
+					else
+						cellKey = next;
 				}
 				else
 				{
 					cellMin = mid;
-					cellKey = next;
+					if(towardsPositive)
+						cellKey = next;
+					else
+						mStack[mStackHead++] = next;
 				}
 			}
 			while(mHierarchy->cellAt(cellKey) == Cell::PARTIAL);
@@ -142,12 +126,12 @@ namespace Hierarchy
 		}
 	}
 
-	template <EdgeIndex edge, OnEdgeDir dir>
-	bool Hierarchy::BoundaryCellIterator<edge, dir>::moveNext()
+	template <CornerIndex startCornerIndex, Axis2 axis>
+	bool Hierarchy::BoundaryCellIterator<startCornerIndex, axis>::moveNext()
 	{
-		int8_t normalAxis = (int8_t)edge & 1;
-		int8_t towardsEdge = (int8_t)edge >> 1;
-		int8_t parallelAxis = normalAxis ^ 1;
+		constexpr Axis2 normalAxis = otherAxis(axis);
+		constexpr int8_t towardsEdge = cornerOnAxis(startCornerIndex, normalAxis);
+		constexpr bool towardsPositive = cornerOnAxis(startCornerIndex, axis) == 0;
 
 		if(mStackHead == 0)
 		{
@@ -163,10 +147,10 @@ namespace Hierarchy
 			mCur.mCoords[normalAxis] += towardsEdge;
 
 			CellKey next = mCur;
-			if(dir == OnEdgeDir::TOWARDS_POSITIVE)
-				next.mCoords[parallelAxis]++;
+			if(towardsPositive)
+				next.mCoords[axis]++;
 			else
-				mCur.mCoords[parallelAxis]++;
+				mCur.mCoords[axis]++;
 
 			mStack[mStackHead++] = next;
 		}
@@ -174,8 +158,8 @@ namespace Hierarchy
 		return true;
 	}
 
-	template <EdgeIndex edge, OnEdgeDir dir>
-	CellKey Hierarchy::BoundaryCellIterator<edge, dir>::cell() const
+	template <CornerIndex startCornerIndex, Axis2 axis>
+	CellKey Hierarchy::BoundaryCellIterator<startCornerIndex, axis>::cell() const
 	{
 		return mCur;
 	}

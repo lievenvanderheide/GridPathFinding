@@ -27,9 +27,6 @@ namespace Hierarchy
 		void addEdges(CellKey cellKey, uint8_t edges);
 		
 	private:
-		template <EdgeIndex edge> 
-		bool pointTraversedTestNeighbor(CellKey neighborKey, int16_t coord) const;
-
 		RefPtr<const Hierarchy> mHierarchy;
 		
 		std::map<CellKey, uint8_t> mTraversedEdges;

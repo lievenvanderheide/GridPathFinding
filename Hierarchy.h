@@ -56,74 +56,9 @@ namespace Hierarchy
 		return ((uint8_t)cell & (uint8_t)Cell::LEVEL_UP_MASK) != 0;
 	}
 
-	static constexpr inline CornerIndex oppositeCorner(CornerIndex cornerIndex)
+	static constexpr inline int8_t cornerOnAxis(CornerIndex cornerIndex, Axis2 axis)
 	{
-		return (CornerIndex)((uint8_t)cornerIndex ^ 3);
-	}
-
-	static constexpr inline CornerIndex oppositeXCorner(CornerIndex cornerIndex)
-	{
-		return (CornerIndex)((uint8_t)cornerIndex ^ 1);
-	}
-
-	static constexpr inline CornerIndex oppositeYCorner(CornerIndex cornerIndex)
-	{
-		return (CornerIndex)((uint8_t)cornerIndex ^ 2);
-	}
-
-	static constexpr inline EdgeIndex oppositeEdge(EdgeIndex edgeIndex)
-	{
-		return (EdgeIndex)((uint8_t)edgeIndex ^ 2);
-	}
-
-	static inline bool cornerOnEdge(CornerIndex cornerIndex, EdgeIndex edgeIndex)
-	{
-		switch(edgeIndex)
-		{
-		case EdgeIndex::MIN_X:
-			return cornerIndex == CornerIndex::MIN_X_MIN_Y || cornerIndex == CornerIndex::MIN_X_MAX_Y;
-		case EdgeIndex::MIN_Y:
-			return cornerIndex == CornerIndex::MIN_X_MIN_Y || cornerIndex == CornerIndex::MAX_X_MIN_Y;
-		case EdgeIndex::MAX_X:
-			return cornerIndex == CornerIndex::MAX_X_MIN_Y || cornerIndex == CornerIndex::MAX_X_MAX_Y;
-		case EdgeIndex::MAX_Y:
-			return cornerIndex == CornerIndex::MIN_X_MAX_Y || cornerIndex == CornerIndex::MAX_X_MAX_Y;
-
-		default:
-			DIDA_ASSERT(!"Invalid input");
-			return false;
-		}
-	}
-
-	static constexpr inline CornerIndex edgeMin(EdgeIndex edgeIndex)
-	{
-		uint8_t edgeAxis = (uint8_t)edgeIndex & 1;
-		uint8_t edgeSign = (uint8_t)edgeIndex >> 1;
-		return (CornerIndex)(edgeSign << edgeAxis);
-	}
-
-	static constexpr inline CornerIndex edgeStartCorner(EdgeIndex edge, OnEdgeDir dir)
-	{
-		int8_t edgeAxis = (int8_t)edge & 1;
-		int8_t edgeSide = (int8_t)edge >> 1;
-
-		int8_t minCorner = edgeSide << edgeAxis;
-		if(dir == OnEdgeDir::TOWARDS_NEGATIVE)
-			return (CornerIndex)(minCorner + (2 >> edgeAxis));
-		else
-			return (CornerIndex)minCorner;
-	}
-
-	static constexpr inline CornerIndex edgeEndCorner(EdgeIndex edge, OnEdgeDir dir)
-	{
-		int8_t edgeAxis = (int8_t)edge & 1;
-		int8_t edgeSide = (int8_t)edge >> 1;
-
-		int8_t minCorner = edgeSide << edgeAxis;
-		if(dir == OnEdgeDir::TOWARDS_POSITIVE)
-			return (CornerIndex)(minCorner + (2 >> edgeAxis));
-		else
-			return (CornerIndex)minCorner;
+		return ((int8_t)cornerIndex >> (int8_t)axis) & 1;
 	}
 
 	static constexpr EdgeIndex xEdgeFromCorner(CornerIndex corner)
@@ -158,45 +93,6 @@ namespace Hierarchy
 			return OnEdgeDir::TOWARDS_POSITIVE;
 	}
 
-	static constexpr EdgeIndex edgeFromCorner(CornerIndex corner, int8_t axis)
-	{
-		if(axis == 0)
-			return xEdgeFromCorner(corner);
-		else
-			return yEdgeFromCorner(corner);
-	}
-
-	static constexpr OnEdgeDir edgeDirFromCorner(CornerIndex corner, int8_t axis)
-	{
-		if(axis == 0)
-			return xEdgeDirFromCorner(corner);
-		else
-			return yEdgeDirFromCorner(corner);
-	}
-
-	template <OnEdgeDir onEdgeDir>
-	static constexpr inline bool onEdgeLt(int16_t a, int16_t b)
-	{
-		if(onEdgeDir == OnEdgeDir::TOWARDS_POSITIVE)
-			return a < b;
-		else
-			return a > b;
-	}
-
-	template <OnEdgeDir onEdgeDir>
-	static constexpr inline bool onEdgeLtEq(int16_t a, int16_t b)
-	{
-		if(onEdgeDir == OnEdgeDir::TOWARDS_POSITIVE)
-			return a <= b;
-		else
-			return a >= b;
-	}
-
-	static constexpr inline OnEdgeDir oppositeDir(OnEdgeDir dir)
-	{
-		return(OnEdgeDir)(-(int8_t)dir);
-	}
-
 	struct CellKey
 	{
 		Point mCoords;
@@ -228,15 +124,6 @@ namespace Hierarchy
 		}
 
 		Point corner(CornerIndex corner) const
-		{
-			int8_t cornerX = (int8_t)corner & 1;
-			int8_t cornerY = (int8_t)corner >> 1;
-			return Point(
-				(mCoords.mX + cornerX) << mLevel,
-				(mCoords.mY + cornerY) << mLevel);
-		}
-
-		Point cornerGood(CornerIndex corner) const
 		{
 			int8_t cornerX = (int8_t)corner & 1;
 			int8_t cornerY = (int8_t)corner >> 1;
@@ -301,10 +188,7 @@ namespace Hierarchy
 
 		CellKey diagNextCellKey(CellKey cellKey, CornerIndex cornerIndex) const;
 
-		template <EdgeIndex edge>
-		bool edgeTraversable(CellKey cellKey) const;
-
-		template <EdgeIndex edge, OnEdgeDir onEdgeDir> 
+		template <CornerIndex startCornerIndex, Axis2 axis> 
 		class BoundaryCellIterator
 		{
 		public:
